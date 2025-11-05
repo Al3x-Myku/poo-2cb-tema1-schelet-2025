@@ -1,2095 +1,847 @@
 package Tema1;
 
-import static org.junit.jupiter.api.Assumptions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import java.io.*;
-import java.text.*;
-import java.util.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.util.Locale;
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AppTest {
-    @Test
-    public void test0() {
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
 
-        ByteArrayInputStream in = new ByteArrayInputStream("0\nA0 Alegeri Electorale 2025\n18\n".getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("S-au creat alegerile Alegeri Electorale 2025")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
+    private final PrintStream originalOut = System.out;
+    private final InputStream originalIn = System.in;
+
+    @BeforeAll
+    public static void setLocale() {
+        Locale.setDefault(Locale.US);
     }
 
-    @Test
-    public void test1() {
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
+    @BeforeEach
+    public void setUp() {
 
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                "0\nA0 Alegeri Electorale 2025\n0\nA0 Alegeri Electorale 2025\n18\n".getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Deja exista alegeri cu id A0")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+        System.setOut(new PrintStream(outputStreamCaptor));
     }
 
-    @Test
-    public void test2() {
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
+    @AfterEach
+    public void tearDown() {
 
-        ByteArrayInputStream in = new ByteArrayInputStream("0\nA0 Alegeri Electorale 2025\n1\nA0\n18\n".getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("Au pornit alegerile Alegeri Electorale 2025")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+        System.setOut(originalOut);
+        System.setIn(originalIn);
     }
 
-    @Test
-    public void test3() {
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
+    private String runMain(String input) {
 
-        ByteArrayInputStream in = new ByteArrayInputStream("0\nA0 Alegeri Electorale 2025\n1\nA1\n18\n".getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Nu exista alegeri cu acest id")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+        String finalInput = input + "7\n";
+        ByteArrayInputStream in = new ByteArrayInputStream(finalInput.getBytes());
+        System.setIn(in);
+
+        App.main(null);
+
+        return outputStreamCaptor.toString().trim().replaceAll("\\r\\n", "\n");
     }
 
-    @Test
-    public void test4() {
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
+    private void assertOutputContains(String expected, String actual) {
+        if (!actual.contains(expected)) {
 
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                "0\nA0 Alegeri Electorale 2025\n1\nA0\n1\nA0\n18\n".getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Alegerile deja au inceput")) {
-            assertTrue(true);
-        } else {
-            fail(output);
+            fail("Output-ul asteptat nu a fost gasit.\nExpected: <" + expected + ">\nActual:   <" + actual + ">");
         }
+        assertTrue(true);
     }
 
-    @Test
-    public void test5() {
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n18\n".getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("S-a adaugat circumscriptia Bucuresti")) {
-            assertTrue(true);
-        } else {
-            fail(output);
+    private void assertOutputDoesNotContain(String unexpected, String actual) {
+        if (actual.contains(unexpected)) {
+            fail("Output-ul contine un text neasteptat.\nUnexpected: <" + unexpected + ">\nActual:     <" + actual + ">");
         }
-    }
-
-    @Test
-    public void test6() {
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti Muntenia\n18\n"
-                        .getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Deja exista o circumscriptie cu numele Bucuresti")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test7() {
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA1 Bucuresti Muntenia\n18\n".getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Nu exista alegeri cu acest id")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test8() {
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                "0\nA0 Alegeri Electorale 2025\n2\nA0 Bucuresti Muntenia\n18\n".getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Nu este perioada de votare")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test9() {
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n3\nA0 Bucuresti\n18\n".getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("S-a sters circumscriptia Bucuresti")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test10() {
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                "0\nA0 Alegeri Electorale 2025\n1\nA0\n3\nA0 Bucuresti\n18\n".getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Nu exista o circumscriptie cu numele Bucuresti")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test11() {
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                "0\nA0 Alegeri Electorale 2025\n1\nA0\n3\nA1 Bucuresti\n18\n".getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Nu exista alegeri cu acest id")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test12() {
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                "0\nA0 Alegeri Electorale 2025\n3\nA0 Bucuresti\n18\n".getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Nu este perioada de votare")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    //String setup = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n";
-    //String end = "18\n";
-
-    @Test
-    public void test13() {
-
-        String setup = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n";
-        String end = "18\n";
-
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup + "4\nA0 1234567891234 45 Dumitru Florin Ionescu\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("S-a adaugat candidatul Dumitru Florin Ionescu")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test14() {
-        String setup = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n";
-        String end = "18\n";
-
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup + "4\nA0 12345678912345 45 Dumitru Florin Ionescu\n"
-                        + end)
-                        .getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: CNP invalid")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test15() {
-        String setup = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n";
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup + "4\nA0 1234567891234 34 Dumitru Florin Ionescu\n"
-                        + end)
-                        .getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Varsta invalida")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-
-    @Test
-    public void test16() {
-        String setup = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n";
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup + "4\nA0 1234567891234 45 Dumitru Florin Ionescu\n"
-                        + "4\nA0 1234567891234 45 Dumitru Florin Ionescu\n"
-                        + end)
-                        .getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Candidatul Dumitru Florin Ionescu are deja acelasi CNP")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test17() {
-        String setup = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n";
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup + "4\nA1 1234567891234 45 Dumitru Florin Ionescu\n"
-                        + end)
-                        .getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Nu exista alegeri cu acest id")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test18() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        // creare alegeri, dar nu pornire
-        String setup = "0\nA0 Alegeri Electorale 2025\n";
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup + "4\nA0 1234567891234 45 Dumitru Florin Ionescu\n"
-                        + "18\n")
-                        .getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Nu este perioada de votare")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test19() {
-        String setup = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n";
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup + "4\nA0 1234567891234 45 Dumitru Florin Ionescu\n"
-                        + "5\nA0 1234567891234\n"
-                        + end)
-                        .getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("S-a sters candidatul Dumitru Florin Ionescu")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test20() {
-        String setup = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n";
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup + "5\nA0 1234567891234\n"
-                        + end)
-                        .getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Nu exista un candidat cu CNP-ul 1234567891234")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test21() {
-        String setup = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n";
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup + "5\nA1 1234567891234\n"
-                        + end)
-                        .getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Nu exista alegeri cu acest id")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test22() {
-        String setup = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n";
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup + "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                        + end)
-                        .getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("S-a adaugat votantul Chipescu Ciprian")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test23() {
-        String setup = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n";
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup + "6\nA0 Bucuresti 12345678912345 20 da Chipescu Ciprian\n"
-                        + end)
-                        .getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: CNP invalid")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test24() {
-        String setup = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n";
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup + "6\nA0 Bucuresti 1234567891234 17 da Chipescu Ciprian\n"
-                        + end)
-                        .getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Varsta invalida")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test25() {
-        String setup = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n";
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup + "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                        + "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                        + end)
-                        .getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Votantul Chipescu Ciprian are deja acelasi CNP")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-
-    }
-
-    @Test
-    public void test26() {
-        String setup = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n";
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup + "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                        + "6\nA0 Bucuresti2 1234567891234 20 da Chipescu Ciprian\n"
-                        + end)
-                        .getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Nu exista o circumscriptie cu numele Bucuresti2")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test27() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup21 + setup22 + setup23 + "7\nA0\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "Candidatii:";
-        String expected2 = "Dumitru Florin Ionescu2 1234567891239 45";
-        String expected3 = "Dumitru Florin Ionescu 1234567891238 45";
-        if (output.contains(expected) && output.contains(expected2) && output.contains(expected3)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test28() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup21 + "7\nA0\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("GOL: Nu sunt candidati")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test29() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup21 + "7\nA1\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Nu exista alegeri cu acest id")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    @Test
-    public void test30() {
         assertTrue(true);
     }
 
     @Test
-    public void test31() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup21 + setup22 + setup23 + "8\nA0 Bucuresti\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "Votantii din Bucuresti:";
-        String expected2 = "Chipescu Ciprian 1234567891234 20";
-        String expected3 = "Chipescu Ciprian2 1234567891235 20";
-        if (output.contains(expected) && output.contains(expected2) && output.contains(expected3)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(1)
+    @DisplayName("Cmd 0: Adaugare Producator Solar (Succes)")
+    public void testAddProducatorSolar() {
+        String input = "0 solar s1 100\n";
+        String output = runMain(input);
+        assertOutputContains("S-a adaugat producatorul s1 de tip solar", output);
     }
 
     @Test
-    public void test32() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup21 + "8\nA0 Bucuresti\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("GOL: Nu sunt votanti in Bucuresti")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(2)
+    @DisplayName("Cmd 0: Adaugare Producator Turbina (Succes)")
+    public void testAddProducatorTurbina() {
+        String input = "0 turbina t1 150\n";
+        String output = runMain(input);
+        assertOutputContains("S-a adaugat producatorul t1 de tip turbina", output);
     }
 
     @Test
-    public void test33() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup21 + "8\nA0 Bucuresti23\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Nu exista o circumscriptie cu numele Bucuresti2")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(3)
+    @DisplayName("Cmd 0: Adaugare Producator Reactor (Succes)")
+    public void testAddProducatorReactor() {
+        String input = "0 reactor r1 1000\n";
+        String output = runMain(input);
+        assertOutputContains("S-a adaugat producatorul r1 de tip reactor", output);
     }
 
     @Test
-    public void test34() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup21 + "8\nA1 Bucuresti\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        if (output.contains("EROARE: Nu exista alegeri cu acest id")) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    // avem:
-    // 2 circumscriptii:
-    // Bucuresti cu 2 votanti: Chipescu Ciprian, Chipescu Ciprian2
-    // Bucuresti2 cu 2 votanti: Chipescu Ciprian3, Chipescu Ciprian4
-    // 2 candidati: Dumitru Florin Ionescu, Dumitru Florin Ionescu2
-
-    @Test
-    public void test35() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup3 + "9\nA0 Bucuresti 1234567891234 1234567891238\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "Chipescu Ciprian a votat pentru Dumitru Florin Ionescu";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(4)
+    @DisplayName("Cmd 0: Eroare ID Duplicat")
+    public void testAddProducatorDuplicateId() {
+        String input = "0 solar s1 100\n0 reactor s1 500\n";
+        String output = runMain(input);
+        assertOutputContains("S-a adaugat producatorul s1 de tip solar", output);
+        assertOutputContains("EROARE: Exista deja o componenta cu id-ul s1", output);
     }
 
     @Test
-    public void test36() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup3 + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                        + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                        + end)
-                        .getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "FRAUDA: Votantul cu CNP-ul 1234567891234 a incercat sa comita o frauda. Votul a fost anulat";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(5)
+    @DisplayName("Cmd 0: Eroare Tip Invalid")
+    public void testAddProducatorInvalidType() {
+        String input = "0 fuziune f1 1000\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Tip producator invalid", output);
     }
 
     @Test
-    public void test37() {
-        String setup = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n";
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup3 + "9\nA0 Bucuresti2 1234567891234 1234567891238\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "FRAUDA: Votantul cu CNP-ul 1234567891234 a incercat sa comita o frauda. Votul a fost anulat";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(6)
+    @DisplayName("Cmd 0: Eroare Putere Negativa")
+    public void testAddProducatorNegativePower() {
+        String input = "0 solar s1 -100\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Putere invalida", output);
     }
 
     @Test
-    public void test38() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup3 + "9\nA0 Bucuresti22 1234567891234 1234567891238\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "EROARE: Nu exista o circumscriptie cu numele Bucuresti22";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(7)
+    @DisplayName("Cmd 0: Eroare Putere Zero")
+    public void testAddProducatorZeroPower() {
+        String input = "0 solar s1 0\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Putere invalida", output);
     }
 
     @Test
-    public void test39() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup3 + "9\nA0 Bucuresti 1234567891230 1234567891238\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "a incercat sa comita o frauda. Votul a fost anulat";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(8)
+    @DisplayName("Cmd 0: Eroare Format Invalid (Lipsa Putere)")
+    public void testAddProducatorMalformed() {
+        String input = "0 solar s1\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Format comanda invalid", output);
     }
 
     @Test
-    public void test40() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup3 + "9\nA0 Bucuresti 1234567891234 1234567891231\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "EROARE: Nu exista un candidat cu CNP-ul 1234567891231";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(9)
+    @DisplayName("Cmd 1: Adaugare Consumator Suport Viata (Succes)")
+    public void testAddConsumatorSuportViata() {
+        String input = "1 suport_viata sv1 800\n";
+        String output = runMain(input);
+        assertOutputContains("S-a adaugat consumatorul sv1 de tip suport_viata", output);
     }
 
     @Test
-    public void test41() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup3 + "9\nA1 Bucuresti 1234567891234 1234567891238\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "EROARE: Nu exista alegeri cu acest id";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    // 10. Oprire alegeri
-    // <id_alegeri>
-    // Aceasta comanda va intoarce urmatoarele:
-    // Caz Raspuns
-    // Succes. S-au terminat alegerile <nume_alegeri>
-    // Id alegeri invalid. EROARE: Nu exista alegeri cu acest id
-    // Alegerile nu sunt in stagiul iN_CURS. EROARE: Nu este perioada de votare
-
-    @Test
-    public void test42() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup3 + "10\nA0\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "S-au terminat alegerile Alegeri Electorale 2025";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(10)
+    @DisplayName("Cmd 1: Adaugare Consumator Laborator (Succes)")
+    public void testAddConsumatorLaborator() {
+        String input = "1 laborator lab1 300\n";
+        String output = runMain(input);
+        assertOutputContains("S-a adaugat consumatorul lab1 de tip laborator", output);
     }
 
     @Test
-    public void test43() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup3 + "10\nA1\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "EROARE: Nu exista alegeri cu acest id";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(11)
+    @DisplayName("Cmd 1: Adaugare Consumator Iluminat (Succes)")
+    public void testAddConsumatorIluminat() {
+        String input = "1 iluminat i1 100\n";
+        String output = runMain(input);
+        assertOutputContains("S-a adaugat consumatorul i1 de tip iluminat", output);
     }
 
     @Test
-    public void test44() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 nu Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 nu Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 nu Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 nu Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 nu Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 nu Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 nu Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        // terminam alegerile
-        String setup42 = "10\nA0\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup4 + setup42 + "11\nA0 Bucuresti\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "Raport voturi Bucuresti:";
-        String expected2 = "Dumitru Florin Ionescu2 1234567891239 - 1";
-        String expected3 = "Dumitru Florin Ionescu 1234567891238 - 1";
-        if (output.contains(expected) && output.contains(expected2) && output.contains(expected3)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(12)
+    @DisplayName("Cmd 1: Eroare ID Duplicat (cu Producator)")
+    public void testAddConsumatorDuplicateId() {
+        String input = "0 solar s1 100\n1 laborator s1 200\n";
+        String output = runMain(input);
+        assertOutputContains("S-a adaugat producatorul s1 de tip solar", output);
+        assertOutputContains("EROARE: Exista deja o componenta cu id-ul s1", output);
     }
 
     @Test
-    public void test45() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        // terminam alegerile
-        String setup42 = "10\nA0\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup3 + setup42 + "11\nA0 Bucuresti3\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "GOL: Lumea nu isi exercita dreptul de vot in Bucuresti3";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(13)
+    @DisplayName("Cmd 1: Eroare Tip Invalid")
+    public void testAddConsumatorInvalidType() {
+        String input = "1 bucatarie k1 100\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Tip consumator invalid", output);
     }
 
     @Test
-    public void test46() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        // terminam alegerile
-        String setup42 = "10\nA0\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup4 + setup42 + "11\nA0 Bucuresti22\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "EROARE: Nu exista o circumscriptie cu numele Bucuresti22";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(14)
+    @DisplayName("Cmd 1: Eroare Cerere Negativa")
+    public void testAddConsumatorNegativeDemand() {
+        String input = "1 laborator lab1 -100\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Cerere putere invalida", output);
     }
 
     @Test
-    public void test47() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        // terminam alegerile
-        String setup42 = "10\nA0\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup4 + "11\nA1 Bucuresti\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "EROARE: Nu exista alegeri cu acest id";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(15)
+    @DisplayName("Cmd 1: Eroare Cerere Zero")
+    public void testAddConsumatorZeroDemand() {
+        String input = "1 laborator lab1 0\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Cerere putere invalida", output);
     }
 
     @Test
-    public void test48() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 nu Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 nu Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 nu Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 nu Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 nu Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 nu Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 nu Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        // terminam alegerile
-        String setup42 = "10\nA0\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup4 + setup42 + "12\nA0\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "Raport voturi Romania:";
-        String expected2 = "Dumitru Florin Ionescu2 1234567891239 - 3";
-        String expected3 = "Dumitru Florin Ionescu 1234567891238 - 4";
-        if (output.contains(expected) && output.contains(expected2) && output.contains(expected3)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(16)
+    @DisplayName("Cmd 1: Eroare Format Invalid (Lipsa Cerere)")
+    public void testAddConsumatorMalformed() {
+        String input = "1 laborator lab1\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Format comanda invalid", output);
     }
 
     @Test
-    public void test49() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        // terminam alegerile
-        String setup42 = "10\nA0\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup3 + setup42 + "12\nA0\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "GOL: Lumea nu isi exercita dreptul de vot in Romania";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(17)
+    @DisplayName("Cmd 2: Adaugare Baterie (Succes)")
+    public void testAddBaterie() {
+        String input = "2 b1 5000\n";
+        String output = runMain(input);
+        assertOutputContains("S-a adaugat bateria b1 cu capacitatea 5000", output);
     }
 
     @Test
-    public void test50() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup4 + "12\nA1\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "EROARE: Nu exista alegeri cu acest id";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    // 13. Analiza detaliata per circumscriptie
-    // <id_alegeri> <nume_circumscriptie>
-    // EX: A1 Arges
-    // !! Se afiseaza informatii analitice despre alegerile din circumscriptia
-    // precizata, sub urmatorul format (toate acestea se vor scrie pe O SINGURa
-    // linie):
-    // in <nume_circumscriptie> au fost <nr_voturi_circumscriptie> voturi din
-    // <nr_voturi_national>. Adica <procentaj>%. Cele mai multe voturi au fost
-    // stranse de <CNP> <nume>. Acestea constituie <procentaj>% din voturile
-    // circumscriptiei.
-
-    // !! La procentaje, se va afisa doar partea intreaga.
-    // Aceasta comanda va intoarce urmatoarele:
-    // Caz Raspuns
-    // Succes. in <nume_circumscriptie> au fost <nr_voturi_circumscriptie> voturi
-    // din <nr_voturi_national>. Adica <procentaj>%. Cele mai multe voturi au fost
-    // stranse de <CNP> <nume>. Acestea constituie <procentaj>% din voturile
-    // circumscriptiei.
-    // Nu sunt voturi GOL: Lumea nu isi exercita dreptul de vot in
-    // <nume_circumscriptie>
-    // Nu a fost gasit obiectul EROARE: Nu exista o circumscriptie cu numele
-    // <nume_circumscriptie>
-    // Alegerile nu se afla in stagiul corepunzator EROARE: inca nu s-a terminat
-    // votarea
-    // Id alegeri invalid. EROARE: Nu exista alegeri cu acest id
-
-    @Test
-    public void test51() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 nu Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 nu Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 nu Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 nu Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 nu Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 nu Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 nu Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891239\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        // terminam alegerile
-        String setup42 = "10\nA0\n";
-        String setup50 = setup4 + setup42;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup50 + "13\nA0 Bucuresti\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "In Bucuresti au fost 2 voturi din 7. Adica 28%. Cele mai multe voturi au fost stranse de 1234567891239 Dumitru Florin Ionescu2. Acestea constituie 100% din voturile circumscriptiei.";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(18)
+    @DisplayName("Cmd 2: Eroare ID Duplicat")
+    public void testAddBaterieDuplicateId() {
+        String input = "0 solar s1 100\n2 s1 1000\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Exista deja o componenta cu id-ul s1", output);
     }
 
     @Test
-    public void test52() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        // terminam alegerile
-        String setup42 = "10\nA0\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup3 + setup42 + "13\nA0 Bucuresti3\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "GOL: Lumea nu isi exercita dreptul de vot in Bucuresti3";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    // 14. Analiza detaliata pe plan national
-    // <id_alegeri>
-    // !! Lista va fi ordonata alfabetic, dupa numele regiunii
-    // !! Totalul voturilor dintr-o regiune se va face adunand voturile din fiecare
-    // circumscriptie.
-    // !! Se afiseaza informatii analitice despre alegerile din Romania, sub
-    // urmatorul format (toate acestea se vor scrie pe LINII SEPARATE), conform:
-
-    // in Romania au fost <nr_voturi> voturi.
-    // in <regiune1> au fost <nr_voturi_regiune1> voturi din <nr_voturi_national>.
-    // Adica <procentaj>%. Cele mai multe voturi au fost stranse de <CNP> <nume>.
-    // Acestea constituie <procentaj>% din voturile regiunii.
-    // ...
-    // in <regiuneN> au fost <nr_voturi_regiuneN> voturi din <nr_voturi_national>.
-    // Adica <procentaj>%. Cele mai multe voturi au fost stranse de <CNP> <nume>.
-    // Acestea constituie <procentaj>% din voturile regiunii.
-
-    // Aceasta comanda va intoarce urmatoarele:
-    // Caz Raspuns
-    // Succes. in Romania au fost <nr_voturi> voturi.
-    // in <regiune1> au fost <nr_voturi_regiune1> voturi din <nr_voturi_national>.
-    // Adica <procentaj>%. Cele mai multe voturi au fost stranse de <CNP> <nume>.
-    // Acestea constituie <procentaj>% din voturile regiunii.
-    // ...
-    // in <regiuneN> au fost <nr_voturi_regiuneN> voturi din <nr_voturi_national>.
-    // Adica <procentaj>%. Cele mai multe voturi au fost stranse de <CNP> <nume>.
-    // Acestea constituie <procentaj>% din voturile regiunii.
-    // Nu sunt voturi GOL: Lumea nu isi exercita dreptul de vot in Romania.
-    // Alegerile nu se afla in stagiul corepunzator EROARE: inca nu s-a terminat
-    // votarea
-    // Id alegeri invalid. EROARE: Nu exista alegeri cu acest id
-
-    @Test
-    public void test53() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 nu Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 nu Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 nu Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 nu Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 nu Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 nu Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 nu Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891239\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        // terminam alegerile
-        String setup42 = "10\nA0\n";
-        String setup50 = setup4 + setup42;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup50 + "14\nA0\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "In Romania au fost 7 voturi.";
-        String expected2 = "In Muntenia2 au fost 3 voturi din 7. Adica 42%. Cele mai multe voturi au fost stranse de 1234567891238 Dumitru Florin Ionescu. Acestea constituie 66% din voturile regiunii.";
-        String expected3 = "In Muntenia au fost 4 voturi din 7. Adica 57%. Cele mai multe voturi au fost stranse de 1234567891239 Dumitru Florin Ionescu2. Acestea constituie 75% din voturile regiunii.";
-        if (output.contains(expected) && output.contains(expected2) && output.contains(expected3)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(19)
+    @DisplayName("Cmd 2: Eroare Capacitate Negativa")
+    public void testAddBaterieNegativeCapacity() {
+        String input = "2 b1 -1000\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Capacitate invalida", output);
     }
 
     @Test
-    public void test54() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        // terminam alegerile
-        String setup42 = "10\nA0\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup3 + setup42 + "14\nA0\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "GOL: Lumea nu isi exercita dreptul de vot in Romania";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(20)
+    @DisplayName("Cmd 2: Eroare Capacitate Zero")
+    public void testAddBaterieZeroCapacity() {
+        String input = "2 b1 0\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Capacitate invalida", output);
     }
 
     @Test
-    public void test55() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup4 + "14\nA1\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "EROARE: Nu exista alegeri cu acest id";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
-    }
-
-    // 15. Rapoarte fraude
-    // <id_alegeri>
-    // !! Se afiseaza o lista cu toate fraudele comise. Ordinea de listare este LIFO
-    // (Last In, First Out); ultimul venit, primul servit. Formatul este:
-    // in <nume_circumscriptie>: <CNP> <nume>
-
-    // Caz Raspuns
-    // Succes. Fraude comise:
-    // in <nume_circumscriptie>: <CNP> <nume>
-    // in <nume_circumscriptie>: <CNP> <nume>
-    // in <nume_circumscriptie>: <CNP> <nume>
-    // Nu sunt fraude. GOL: Romanii sunt cinstiti
-    // Alegerile nu se afla in stagiul corepunzator EROARE: inca nu s-a terminat
-    // votarea
-    // Id alegeri invalid. EROARE: Nu exista alegeri cu acest id
-
-    // 16. sterge alegeri
-    // <id_alegeri>
-    // !! Se sterg alegerile corespunzatoare si toate datele aferente.
-    // Caz Raspuns
-    // Succes. S-au sters alegerile <nume_alegeri>.
-    // Id alegeri invalid. EROARE: Nu exista alegeri cu acest id
-
-    // 17. Listare alegeri
-    // Comanda nu are parametrii.
-    // Caz Raspuns
-    // Succes. Alegeri:
-    // <id_alegeri> <nume_alegeri>
-    //
-    // <id_alegeri> <nume_alegeri>
-    // Nu sunt alegeri. GOL: Nu sunt alegeri
-    // 18. Iesire
-    // Comanda nu are parametrii.
-
-    // Comitem cateva voturi multiple
-
-    @Test
-    public void test56() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        // terminam alegerile
-        String setup42 = "10\nA0\n";
-        String setup60 = setup4 + setup42;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup60 + "15\nA0\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "Fraude comise:";
-        String expected2 = "In Bucuresti: 1234567891234 Chipescu Ciprian";
-        if (output.contains(expected) && output.contains(expected2)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(21)
+    @DisplayName("Cmd 2: Eroare Format Invalid (Lipsa Capacitate)")
+    public void testAddBaterieMalformed() {
+        String input = "2 b1\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Format comanda invalid", output);
     }
 
     @Test
-    public void test57() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        // terminam alegerile
-        String setup42 = "10\nA0\n";
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup3 + setup42 + "15\nA0\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "GOL: Romanii sunt cinstiti";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(22)
+    @DisplayName("Cmd 4: Setare Producator Defect (Succes)")
+    public void testSetProducatorDefect() {
+        String input = "0 reactor r1 1000\n4 r1 false\n";
+        String output = runMain(input);
+        assertOutputContains("Componenta r1 este acum defecta", output);
     }
 
     @Test
-    public void test58() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        // terminam alegerile
-        String setup42 = "10\nA0\n";
-        String setup60 = setup4 + setup42;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup60 + "16\nA0\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "S-au sters alegerile Alegeri Electorale 2025";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(23)
+    @DisplayName("Cmd 4: Setare Consumator Defect (Succes)")
+    public void testSetConsumatorDefect() {
+        String input = "1 laborator lab1 300\n4 lab1 false\n";
+        String output = runMain(input);
+        assertOutputContains("Componenta lab1 este acum defecta", output);
     }
 
     @Test
-    public void test59() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        // terminam alegerile
-        String setup42 = "10\nA0\n";
-        String setup60 = setup4 + setup42;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup60 + "16\nA1\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "EROARE: Nu exista alegeri cu acest id";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(24)
+    @DisplayName("Cmd 4: Setare Baterie Defecta (Succes)")
+    public void testSetBaterieDefect() {
+        String input = "2 b1 5000\n4 b1 false\n";
+        String output = runMain(input);
+        assertOutputContains("Componenta b1 este acum defecta", output);
     }
 
     @Test
-    public void test60() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
-
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
-
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
-
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
-
-        // terminam alegerile
-        String setup42 = "10\nA0\n";
-        String setup60 = setup4 + setup42;
-
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup60 + "17\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "Alegeri:";
-        String expected2 = "A0 Alegeri Electorale 2025";
-        if (output.contains(expected) && output.contains(expected2)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Order(25)
+    @DisplayName("Cmd 4: Eroare ID Inexistent")
+    public void testSetDefectNotFound() {
+        String input = "4 id_inexistent false\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Nu exista componenta cu id-ul id_inexistent", output);
     }
 
     @Test
-    public void test61() {
-        String end = "18\n";
-        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(outputStreamCaptor));
-        String setup21 = "0\nA0 Alegeri Electorale 2025\n1\nA0\n2\nA0 Bucuresti Muntenia\n2\nA0 Bucuresti2 Muntenia\n";
-        String setup22 = "6\nA0 Bucuresti 1234567891234 20 da Chipescu Ciprian\n"
-                + "6\nA0 Bucuresti 1234567891235 20 da Chipescu Ciprian2\n"
-                + "6\nA0 Bucuresti2 1234567891236 20 da Chipescu Ciprian3\n"
-                + "6\nA0 Bucuresti2 1234567891237 20 da Chipescu Ciprian4\n";
-        String setup23 = "4\nA0 1234567891238 45 Dumitru Florin Ionescu\n"
-                + "4\nA0 1234567891239 45 Dumitru Florin Ionescu2\n";
-        String setup30 = setup21 + setup22 + setup23;
+    @Order(26)
+    @DisplayName("Cmd 4: Eroare Status Invalid")
+    public void testSetDefectInvalidStatus() {
+        String input = "0 reactor r1 1000\n4 r1 defect\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Status invalid", output);
+    }
 
-        // mai putem inca 1 circumscriptie cu alta regiune: Muntenia2
-        String setup31 = "2\nA0 Bucuresti3 Muntenia2\n";
+    @Test
+    @Order(27)
+    @DisplayName("Cmd 4: Reparare Componenta (Succes)")
+    public void testSetDefectReparare() {
+        String input = "0 reactor r1 1000\n4 r1 false\n4 r1 true\n";
+        String output = runMain(input);
+        assertOutputContains("Componenta r1 este acum defecta", output);
+        assertOutputContains("Componenta r1 este acum operationala", output);
+    }
 
-        // mai putem inca 3 votanti in Bucuresti3
-        String setup32 = "6\nA0 Bucuresti3 1234567891238 20 da Chipescu Ciprian5\n"
-                + "6\nA0 Bucuresti3 1234567891239 20 da Chipescu Ciprian6\n"
-                + "6\nA0 Bucuresti3 1234567891230 20 da Chipescu Ciprian7\n";
+    @Test
+    @Order(28)
+    @DisplayName("Cmd 5: Status Grid Gol")
+    public void testStatusGridEmpty() {
+        String input = "5\n";
+        String output = runMain(input);
+        assertOutputContains("Reteaua este goala", output);
+    }
 
-        String setup3 = setup30 + setup31 + setup32;
-        String setup40 = setup3;
-        // se fac cateva voturi
-        String setup41 = "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891235 1234567891239\n"
-                + "9\nA0 Bucuresti2 1234567891236 1234567891238\n"
-                + "9\nA0 Bucuresti2 1234567891237 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891238 1234567891238\n"
-                + "9\nA0 Bucuresti3 1234567891239 1234567891239\n"
-                + "9\nA0 Bucuresti3 1234567891230 1234567891238\n"
-                // si fraude
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n"
-                + "9\nA0 Bucuresti 1234567891234 1234567891238\n";
-        String setup4 = setup40 + setup41;
+    @Test
+    @Order(29)
+    @DisplayName("Cmd 5: Status Grid Cu Componente")
+    public void testStatusGridPopulated() {
+        String input = "0 solar s1 100\n1 laborator lab1 200\n2 b1 1000\n5\n";
+        String output = runMain(input);
+        assertOutputContains("Stare Retea: STABILA", output);
+        assertOutputContains("Producator s1 (PanouSolar) - PutereBaza: 100.00 - Status: Operational", output);
+        assertOutputContains("Consumator lab1 (LaboratorStiintific) - Cerere: 200.00 - Prioritate: 2 - Status: Alimentat", output);
+        assertOutputContains("Baterie b1 - Stocare: 0.00/1000.00 - Status: Operational", output);
+    }
 
-        ByteArrayInputStream in = new ByteArrayInputStream(
-                (setup3 + "16\nA0\n17\n" + end).getBytes());
-        App app = new App(in);
-        app.run();
-        String output = outputStreamCaptor.toString().trim();
-        String expected = "GOL: Nu sunt alegeri";
-        if (output.contains(expected)) {
-            assertTrue(true);
-        } else {
-            fail(output);
-        }
+    @Test
+    @Order(30)
+    @DisplayName("Cmd 6: Istoric Gol")
+    public void testIstoricEmpty() {
+        String input = "6\n";
+        String output = runMain(input);
+        assertOutputContains("Istoric evenimente gol", output);
+    }
+
+    @Test
+    @Order(31)
+    @DisplayName("Cmd 7: Iesire (Mesaj)")
+    public void testExitMessage() {
+        String input = "";
+        String output = runMain(input);
+        assertOutputContains("Simulatorul se inchide.", output);
+    }
+
+    @Test
+    @Order(32)
+    @DisplayName("Comanda Invalida")
+    public void testInvalidCommand() {
+        String input = "8\nabc\n";
+        String output = runMain(input);
+
+        assertTrue(output.split("EROARE: Comanda necunoscuta.").length >= 2);
+    }
+
+    @Test
+    @Order(33)
+    @DisplayName("Cmd 3: Scenariu Surplus (Bateriile se incarca)")
+    public void testTickSurplus() {
+        String input = "0 reactor r1 1000\n" +
+                "1 laborator lab1 300\n" +
+                "2 b1 5000\n" +
+                "3 0.0 0.0\n";
+        String output = runMain(input);
+
+        assertOutputContains("TICK: Productie 1000.00, Cerere 300.00. Baterii: 700.00 MW. Decuplati: []", output);
+    }
+
+    @Test
+    @Order(34)
+    @DisplayName("Cmd 3: Scenariu Surplus Mare (Bateriile se umplu, surplusul se pierde)")
+    public void testTickSurplusOverflow() {
+        String input = "0 reactor r1 2000\n" +
+                "1 laborator lab1 500\n" +
+                "2 b1 1000\n" +
+                "3 0.0 0.0\n";
+        String output = runMain(input);
+
+        assertOutputContains("TICK: Productie 2000.00, Cerere 500.00. Baterii: 1000.00 MW. Decuplati: []", output);
+    }
+
+    @Test
+    @Order(35)
+    @DisplayName("Cmd 3: Scenariu Echilibru (Productie = Cerere)")
+    public void testTickEchilibru() {
+        String input = "0 reactor r1 500\n" +
+                "1 laborator lab1 500\n" +
+                "2 b1 1000\n" +
+                "3 0.0 0.0\n";
+        String output = runMain(input);
+        assertOutputContains("TICK: Productie 500.00, Cerere 500.00. Baterii: 0.00 MW. Decuplati: []", output);
+    }
+
+    @Test
+    @Order(36)
+    @DisplayName("Cmd 3: Scenariu Deficit Mic (Bateriile acopera)")
+    public void testTickDeficitMic() {
+        String input = "0 reactor r1 500\n" +
+                "1 laborator lab1 800\n" +
+                "2 b1 1000\n" +
+                "3 0.0 0.0\n" +
+                "0 reactor r_charge 300\n" +
+                "3 0.0 0.0\n" +
+                "4 r_charge false\n" +
+                "3 0.0 0.0\n";
+
+        String setup = "2 b1 1000\n" +
+                "0 reactor r_charge 500\n" +
+                "3 0.0 0.0\n" +
+                "4 r_charge false\n" +
+                "0 reactor r_prod 500\n" +
+                "1 laborator lab1 800\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(setup);
+
+        assertOutputContains("TICK: Productie 500.00, Cerere 800.00. Baterii: 200.00 MW. Decuplati: []", output);
+    }
+
+    @Test
+    @Order(37)
+    @DisplayName("Cmd 3: Scenariu Triage P3 (Bateriile se golesc, P3 decuplat)")
+    public void testTickTriageP3() {
+        String input = "0 reactor r1 500\n" +
+                "2 b1 200\n" +
+                "1 laborator lab1 400\n" +
+                "1 iluminat i1 300\n" +
+                "3 0.0 0.0\n";
+
+        String setup = "2 b1 200\n" +
+                "0 reactor r_charge 200\n" +
+                "3 0.0 0.0\n" +
+                "4 r_charge false\n" +
+                "0 reactor r1 500\n" +
+                "1 laborator lab1 400\n" +
+                "1 iluminat i1 350\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(setup);
+
+        String[] outputs = output.split("\n");
+        String lastTickOutput = outputs[outputs.length-2];
+
+        assertOutputContains("TICK: Productie 500.00, Cerere 750.00. Baterii: 0.00 MW. Decuplati: [i1]", lastTickOutput);
+    }
+
+    @Test
+    @Order(38)
+    @DisplayName("Cmd 3: Scenariu Triage P2+P3 (Bateriile se golesc, P2 si P3 decuplati)")
+    public void testTickTriageP2P3() {
+        String setup = "2 b1 100\n" +
+                "0 reactor r1 500\n" +
+                "1 suport_viata sv1 400\n" +
+                "1 laborator lab1 300\n" +
+                "1 iluminat i1 200\n" +
+                "3 0.0 0.0\n";
+
+        String setupP2P3 = "2 b1 100\n" +
+                "0 reactor r1 500\n" +
+                "1 suport_viata sv1 400\n" +
+                "1 laborator lab1 300\n" +
+                "1 iluminat i1 201\n" +
+                "3 0.0 0.0\n";
+
+        String setupFinal = "2 b1 100\n" +
+                "0 reactor r1 500\n" +
+                "1 suport_viata sv1 400\n" +
+                "1 laborator lab1 300\n" +
+                "1 iluminat i1 300\n" +
+                "3 0.0 0.0\n";
+
+        String setupP2P3Final = "2 b1 100\n" +
+                "0 reactor r1 500\n" +
+                "1 suport_viata sv1 400\n" +
+                "1 laborator lab1 300\n" +
+                "1 iluminat i1 101\n" +
+                "3 0.0 0.0\n";
+
+        String setupTriageAll = "2 b1 100\n" +
+                "0 reactor r1 500\n" +
+                "1 suport_viata sv1 400\n" +
+                "1 laborator lab1 300\n" +
+                "1 laborator lab2 300\n" +
+                "1 iluminat i1 101\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(setupTriageAll);
+
+        boolean foundCase1 = output.contains("Decuplati: [i1, lab2, lab1]") ||
+                output.contains("Decuplati: [i1, lab1, lab2]");
+
+        String setupTriageAll2 = "2 b1 100\n" +
+                "0 reactor r1 500\n" +
+                "1 suport_viata sv1 400\n" +
+                "1 laborator lab1 300\n" +
+                "1 laborator lab2 101\n" +
+                "1 iluminat i1 101\n" +
+                "3 0.0 0.0\n";
+
+        String output2 = runMain(setupTriageAll2);
+
+        boolean P3decuplat = output2.contains("i1");
+        boolean P2decuplat1 = output2.contains("lab1");
+        boolean P2decuplat2 = output2.contains("lab2");
+
+        assertOutputContains("Decuplati: [i1", output2);
+        assertTrue(P2decuplat1 || P2decuplat2, "Cel putin un P2 (lab1 sau lab2) ar trebui decuplat.\nOutput: " + output2);
+    }
+
+    @Test
+    @Order(39)
+    @DisplayName("Cmd 3: Scenariu BLACKOUT (Productie + Baterii < Cerere P1)")
+    public void testTickBlackout() {
+        String input = "0 reactor r1 500\n" +
+                "2 b1 100\n" +
+                "1 suport_viata sv1 800\n" +
+                "1 laborator lab1 300\n" +
+                "1 iluminat i1 200\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(input);
+        assertOutputContains("BLACKOUT! SIMULARE OPRITA.", output);
+    }
+
+    @Test
+    @Order(40)
+    @DisplayName("Cmd 3: Scenariu Post-Blackout (Comenzile esueaza)")
+    public void testPostBlackout() {
+        String input = "0 reactor r1 100\n" +
+                "1 suport_viata sv1 800\n" +
+                "3 0.0 0.0\n" +
+                "0 solar s1 1000\n" +
+                "5\n" +
+                "6\n";
+
+        String output = runMain(input);
+        assertOutputContains("BLACKOUT! SIMULARE OPRITA.", output);
+
+        assertOutputContains("EROARE: Reteaua este in BLACKOUT. Simulare oprita.", output);
+
+        assertOutputContains("Stare Retea: BLACKOUT", output);
+
+        assertOutputContains("Tick 1: BLACKOUT! SIMULARE OPRITA.", output);
+    }
+
+    @Test
+    @Order(41)
+    @DisplayName("Cmd 3: Tick cu Producator Defect")
+    public void testTickProducatorDefect() {
+        String input = "0 reactor r1 1000\n" +
+                "1 laborator lab1 500\n" +
+                "4 r1 false\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(input);
+        assertOutputContains("TICK: Productie 0.00, Cerere 500.00. Baterii: 0.00 MW. Decuplati: [lab1]", output);
+    }
+
+    @Test
+    @Order(42)
+    @DisplayName("Cmd 3: Tick cu Consumator Defect")
+    public void testTickConsumatorDefect() {
+        String input = "0 reactor r1 1000\n" +
+                "1 laborator lab1 500\n" +
+                "4 lab1 false\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(input);
+        assertOutputContains("TICK: Productie 1000.00, Cerere 0.00. Baterii: 0.00 MW. Decuplati: []", output);
+    }
+
+    @Test
+    @Order(43)
+    @DisplayName("Cmd 3: Tick cu Baterie Defecta (Incarcare)")
+    public void testTickBaterieDefectaIncarcare() {
+        String input = "0 reactor r1 1000\n" +
+                "1 laborator lab1 500\n" +
+                "2 b1 5000\n" +
+                "4 b1 false\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(input);
+
+        assertOutputContains("TICK: Productie 1000.00, Cerere 500.00. Baterii: 0.00 MW. Decuplati: []", output);
+    }
+
+    @Test
+    @Order(44)
+    @DisplayName("Cmd 3: Tick cu Baterie Defecta (Descarcare)")
+    public void testTickBaterieDefectaDescarcare() {
+        String input = "2 b1 5000\n" +
+                "0 reactor r_charge 1000\n" +
+                "3 0.0 0.0\n" +
+                "4 r_charge false\n" +
+                "4 b1 false\n" +
+                "1 laborator lab1 500\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(input);
+
+        String[] outputs = output.split("\n");
+        String lastTickOutput = outputs[outputs.length-2];
+
+        assertOutputContains("TICK: Productie 0.00, Cerere 500.00. Baterii: 1000.00 MW. Decuplati: [lab1]", lastTickOutput);
+    }
+
+    @Test
+    @Order(45)
+    @DisplayName("Cmd 3: Tick Triage Multiplu P3 si P2")
+    public void testTickTriageMultiplu() {
+        String input = "0 reactor r1 100\n" +
+                "1 suport_viata sv1 100\n" +
+                "1 laborator lab1 50\n" +
+                "1 laborator lab2 50\n" +
+                "1 iluminat i1 50\n" +
+                "1 iluminat i2 50\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(input);
+
+        assertOutputContains("Decuplati: [i", output);
+        assertOutputContains("i2", output);
+        assertOutputContains("lab1", output);
+        assertOutputContains("lab2", output);
+    }
+
+    @Test
+    @Order(46)
+    @DisplayName("Cmd 3: Tick Factori Soare/Vant (Productie Corecta)")
+    public void testTickFactori() {
+        String input = "0 solar s1 100\n" +
+                "0 turbina t1 100\n" +
+                "0 reactor r1 100\n" +
+                "2 b1 100\n" +
+                "1 laborator lab1 200\n" +
+                "3 0.8 0.5\n";
+
+        String output = runMain(input);
+        assertOutputContains("TICK: Productie 230.00, Cerere 200.00. Baterii: 30.00 MW. Decuplati: []", output);
+    }
+
+    @Test
+    @Order(47)
+    @DisplayName("Cmd 3: Tick Factori Zero (Doar Reactor)")
+    public void testTickFactoriZero() {
+        String input = "0 solar s1 100\n" +
+                "0 turbina t1 100\n" +
+                "0 reactor r1 100\n" +
+                "1 laborator lab1 101\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(input);
+        assertOutputContains("TICK: Productie 100.00, Cerere 101.00. Baterii: 0.00 MW. Decuplati: [lab1]", output);
+    }
+
+    @Test
+    @Order(48)
+    @DisplayName("Cmd 3: Triage P3 Partial (Un P3 decuplat e suficient)")
+    public void testTickTriagePartialP3() {
+        String input = "0 reactor r1 90\n" +
+                "1 iluminat i1 50\n" +
+                "1 iluminat i2 50\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(input);
+        boolean decuplatI1 = output.contains("Decuplati: [i1]");
+        boolean decuplatI2 = output.contains("Decuplati: [i2]");
+        assertTrue(decuplatI1 || decuplatI2, "Unul din P3 (i1 sau i2) ar trebui decuplat.\nOutput: " + output);
+        assertFalse(decuplatI1 && decuplatI2, "Doar UNUL din P3 ar trebui decuplat.\nOutput: " + output);
+    }
+
+    @Test
+    @Order(49)
+    @DisplayName("Cmd 3: Eroare Factori Invalizi (Text)")
+    public void testTickInvalidFactorsText() {
+        String input = "3 abc def\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Factori invalizi", output);
+    }
+
+    @Test
+    @Order(50)
+    @DisplayName("Cmd 3: Eroare Factori Invalizi (Lipsa)")
+    public void testTickInvalidFactorsMissing() {
+        String input = "3 0.5\n";
+        String output = runMain(input);
+        assertOutputContains("EROARE: Format comanda invalid", output);
+    }
+
+    @Test
+    @Order(51)
+    @DisplayName("Lant: Incarcare Baterii Multiple")
+    public void testChainIncarcareBateriiMultiple() {
+        String input = "0 reactor r1 1000\n" +
+                "2 b1 300\n" +
+                "2 b2 300\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(input);
+        assertOutputContains("TICK: Productie 1000.00, Cerere 0.00. Baterii: 600.00 MW. Decuplati: []", output);
+    }
+
+    @Test
+    @Order(52)
+    @DisplayName("Lant: Descarcare Baterii Multiple")
+    public void testChainDescarcareBateriiMultiple() {
+        String input = "2 b1 300\n" +
+                "2 b2 300\n" +
+                "0 reactor r_charge 600\n" +
+                "3 0.0 0.0\n" +
+                "4 r_charge false\n" +
+                "1 laborator lab1 500\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(input);
+
+        String[] outputs = output.split("\n");
+        String lastTickOutput = outputs[outputs.length-2];
+
+        assertOutputContains("TICK: Productie 0.00, Cerere 500.00. Baterii: 100.00 MW. Decuplati: []", lastTickOutput);
+    }
+
+    @Test
+    @Order(53)
+    @DisplayName("Lant: Reparare Componenta si Revenire Retea")
+    public void testChainReparareSiRevenire() {
+        String input = "0 reactor r1 1000\n" +
+                "1 laborator lab1 800\n" +
+                "2 b1 500\n" +
+                "4 r1 false\n" +
+                "3 0.0 0.0\n" +
+                "4 r1 true\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(input);
+        assertOutputContains("TICK: Productie 0.00, Cerere 800.00. Baterii: 0.00 MW. Decuplati: [lab1]", output);
+        assertOutputContains("Componenta r1 este acum operationala", output);
+        assertOutputContains("TICK: Productie 1000.00, Cerere 800.00. Baterii: 200.00 MW. Decuplati: []", output);
+    }
+
+    @Test
+    @Order(54)
+    @DisplayName("Lant: Triage P1 Neafectat")
+    public void testChainTriageP1Neafectat() {
+        String input = "0 reactor r1 500\n" +
+                "1 suport_viata sv1 500\n" +
+                "1 laborator lab1 500\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(input);
+        assertOutputContains("TICK: Productie 500.00, Cerere 1000.00. Baterii: 0.00 MW. Decuplati: [lab1]", output);
+
+    }
+
+    @Test
+    @Order(55)
+    @DisplayName("Cmd 5: Formatare Status (Defect, Decuplat)")
+    public void testStatusFormatDefectDecuplat() {
+        String input = "0 reactor r1 100\n" +
+                "1 laborator lab1 500\n" +
+                "2 b1 1000\n" +
+                "4 r1 false\n" +
+                "3 0.0 0.0\n" +
+                "5\n";
+
+        String output = runMain(input);
+        assertOutputContains("Producator r1 (ReactorNuclear) - PutereBaza: 100.00 - Status: Defect", output);
+        assertOutputContains("Consumator lab1 (LaboratorStiintific) - Cerere: 500.00 - Prioritate: 2 - Status: Decuplat", output);
+        assertOutputContains("Baterie b1 - Stocare: 0.00/1000.00 - Status: Operational", output);
+    }
+
+    @Test
+    @Order(56)
+    @DisplayName("Cmd 6: Istoric Evenimente (Contine Tick si Blackout)")
+    public void testIstoricEvenimenteContinut() {
+        String input = "0 reactor r1 100\n" +
+                "3 0.0 0.0\n" +
+                "1 suport_viata sv1 200\n" +
+                "3 0.0 0.0\n" +
+                "6\n";
+        String output = runMain(input);
+        assertOutputContains("Tick 2: BLACKOUT! SIMULARE OPRITA.", output);
+    }
+
+    @Test
+    @Order(57)
+    @DisplayName("Cmd 0: Adaugare ID lung (Succes)")
+    public void testAddIdLung() {
+        String id = "reactor_fisiune_model_X_sector_Alpha";
+        String input = "0 reactor " + id + " 1000\n";
+        String output = runMain(input);
+        assertOutputContains("S-a adaugat producatorul " + id + " de tip reactor", output);
+    }
+
+    @Test
+    @Order(58)
+    @DisplayName("Cmd 3: Triage P2 Neafectat (P3 e suficient)")
+    public void testTriageP3Suficient() {
+        String input = "0 reactor r1 100\n" +
+                "1 laborator lab1 50\n" +
+                "1 iluminat i1 101\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(input);
+        assertOutputContains("Decuplati: [i1]", output);
+    }
+
+    @Test
+    @Order(59)
+    @DisplayName("Cmd 3: Ticks Succesive (Acumulare Baterie)")
+    public void testTicksSuccesiveAcumulare() {
+        String input = "0 reactor r1 100\n" +
+                "2 b1 1000\n" +
+                "3 0.0 0.0\n" +
+                "3 0.0 0.0\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(input);
+        assertOutputContains("TICK: Productie 100.00, Cerere 0.00. Baterii: 100.00 MW. Decuplati: []", output);
+        assertOutputContains("TICK: Productie 100.00, Cerere 0.00. Baterii: 200.00 MW. Decuplati: []", output);
+        assertOutputContains("TICK: Productie 100.00, Cerere 0.00. Baterii: 300.00 MW. Decuplati: []", output);
+    }
+
+    @Test
+    @Order(60)
+    @DisplayName("Cmd 3: Ticks Succesive (Descarcare Baterie)")
+    public void testTicksSuccesiveDescarcare() {
+        String input = "2 b1 1000\n" +
+                "0 reactor r_charge 500\n" +
+                "3 0.0 0.0\n" +
+                "4 r_charge false\n" +
+                "1 laborator lab1 200\n" +
+                "3 0.0 0.0\n" +
+                "3 0.0 0.0\n";
+
+        String output = runMain(input);
+
+        String[] outputs = output.split("\n");
+        String tick2 = outputs[outputs.length-3];
+        String tick3 = outputs[outputs.length-2];
+
+        assertOutputContains("TICK: Productie 0.00, Cerere 200.00. Baterii: 300.00 MW. Decuplati: []", tick2);
+        assertOutputContains("TICK: Productie 0.00, Cerere 200.00. Baterii: 100.00 MW. Decuplati: []", tick3);
     }
 }
